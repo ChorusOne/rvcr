@@ -4,3 +4,11 @@ services:
       image: docker.io/kennethreitz/httpbin:latest
       ports:
         - '38282:80'
+      networks:
+        static-network:
+          ipv4_address: 172.21.93.93
+networks:
+  static-network:
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
