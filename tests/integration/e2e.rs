@@ -83,6 +83,7 @@ async fn send_and_compare(
     let mut vcr_headers = vcr_response.headers().clone();
     let mut real_headers = real_response.headers().clone();
 
+    // Server date is different for recorded and live requests
     vcr_headers.remove("date".to_string());
     real_headers.remove("date".to_string());
 
