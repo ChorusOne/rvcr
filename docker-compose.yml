@@ -1,0 +1,6 @@
+version: '2'
+services:
+    httpbin:
+      image: docker.io/kennethreitz/httpbin:latest
+      ports:
+        - '38282:80'

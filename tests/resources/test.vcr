@@ -1,0 +1,155 @@
+{
+  "http_interactions": [
+    {
+      "response": {
+        "body": {
+          "encoding": null,
+          "string": "{\n  \"args\": {}, \n  \"headers\": {\n    \"Accept\": \"application/json\", \n    \"Host\": \"127.0.0.1:38282\"\n  }, \n  \"origin\": \"172.19.0.1\", \n  \"url\": \"http://127.0.0.1:38282/get\"\n}\n"
+        },
+        "http_version": "1.1",
+        "status": {
+          "code": 200,
+          "message": "OK"
+        },
+        "headers": {
+          "access-control-allow-credentials": [
+            "true"
+          ],
+          "server": [
+            "gunicorn/19.9.0"
+          ],
+          "access-control-allow-origin": [
+            "*"
+          ],
+          "content-length": [
+            "170"
+          ],
+          "content-type": [
+            "application/json"
+          ],
+          "connection": [
+            "keep-alive"
+          ],
+          "date": [
+            "Thu, 27 Apr 2023 00:53:14 GMT"
+          ]
+        }
+      },
+      "request": {
+        "uri": "http://127.0.0.1:38282/get",
+        "body": {
+          "encoding": null,
+          "string": ""
+        },
+        "method": "get",
+        "headers": {
+          "accept": [
+            "application/json"
+          ]
+        }
+      },
+      "recorded_at": "Thu, 27 Apr 2023 00:53:14 +0000"
+    },
+    {
+      "response": {
+        "body": {
+          "encoding": null,
+          "string": "{\n  \"args\": {}, \n  \"data\": \"test1\", \n  \"files\": {}, \n  \"form\": {}, \n  \"headers\": {\n    \"Accept\": \"application/json\", \n    \"Content-Length\": \"5\", \n    \"Host\": \"127.0.0.1:38282\"\n  }, \n  \"json\": null, \n  \"origin\": \"172.19.0.1\", \n  \"url\": \"http://127.0.0.1:38282/post\"\n}\n"
+        },
+        "http_version": "1.1",
+        "status": {
+          "code": 200,
+          "message": "OK"
+        },
+        "headers": {
+          "connection": [
+            "keep-alive"
+          ],
+          "date": [
+            "Thu, 27 Apr 2023 00:53:14 GMT"
+          ],
+          "content-type": [
+            "application/json"
+          ],
+          "server": [
+            "gunicorn/19.9.0"
+          ],
+          "access-control-allow-origin": [
+            "*"
+          ],
+          "content-length": [
+            "267"
+          ],
+          "access-control-allow-credentials": [
+            "true"
+          ]
+        }
+      },
+      "request": {
+        "uri": "http://127.0.0.1:38282/post",
+        "body": {
+          "encoding": null,
+          "string": "test1"
+        },
+        "method": "post",
+        "headers": {
+          "accept": [
+            "application/json"
+          ]
+        }
+      },
+      "recorded_at": "Thu, 27 Apr 2023 00:53:14 +0000"
+    },
+    {
+      "response": {
+        "body": {
+          "encoding": null,
+          "string": "{\n  \"args\": {}, \n  \"data\": \"test2\", \n  \"files\": {}, \n  \"form\": {}, \n  \"headers\": {\n    \"Accept\": \"application/json\", \n    \"Content-Length\": \"5\", \n    \"Host\": \"127.0.0.1:38282\"\n  }, \n  \"json\": null, \n  \"origin\": \"172.19.0.1\", \n  \"url\": \"http://127.0.0.1:38282/post\"\n}\n"
+        },
+        "http_version": "1.1",
+        "status": {
+          "code": 200,
+          "message": "OK"
+        },
+        "headers": {
+          "content-length": [
+            "267"
+          ],
+          "date": [
+            "Thu, 27 Apr 2023 00:53:14 GMT"
+          ],
+          "access-control-allow-credentials": [
+            "true"
+          ],
+          "access-control-allow-origin": [
+            "*"
+          ],
+          "server": [
+            "gunicorn/19.9.0"
+          ],
+          "content-type": [
+            "application/json"
+          ],
+          "connection": [
+            "keep-alive"
+          ]
+        }
+      },
+      "request": {
+        "uri": "http://127.0.0.1:38282/post",
+        "body": {
+          "encoding": null,
+          "string": "test2"
+        },
+        "method": "post",
+        "headers": {
+          "accept": [
+            "application/json"
+          ]
+        }
+      },
+      "recorded_at": "Thu, 27 Apr 2023 00:53:14 +0000"
+    }
+  ],
+  "recorded_with": "rVCR 0.1.0"
+}
