@@ -13,7 +13,7 @@
 //!         use rvcr::{VCRMiddleware, VCRMode};
 //!
 //!         let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-//!         bundle.push("tests/resources/test.vcr");
+//!         bundle.push("tests/resources/replay.vcr.json");
 //!
 //!         let middleware: VCRMiddleware = VCRMiddleware::try_from(bundle.clone())
 //!             .unwrap()
@@ -30,7 +30,7 @@ use std::{collections::HashMap, fs, path::PathBuf, str::FromStr, sync::Mutex};
 
 use base64::{engine::general_purpose, Engine};
 use reqwest_middleware::Middleware;
-use vcr_cassette::RecorderId;
+use vcr_cassette::{HttpInteraction, RecorderId};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -44,6 +44,7 @@ pub struct VCRMiddleware {
     path: Option<PathBuf>,
     storage: Mutex<vcr_cassette::Cassette>,
     mode: VCRMode,
+    search: VCRReplaySearch,
     skip: Mutex<usize>,
 }
 
@@ -54,6 +55,16 @@ pub enum VCRMode {
     Record,
     /// Replay requests using local files
     Replay,
+}
+
+/// Skip requests
+#[derive(Eq, PartialEq)]
+pub enum VCRReplaySearch {
+    /// Skip requests which already have been found. Useful for
+    /// verifying use-cases with strict request order.
+    SkipFound,
+    /// Search through all requests every time
+    SearchAll,
 }
 
 pub type VCRError = &'static str;
@@ -67,6 +78,12 @@ impl VCRMiddleware {
     /// Adjust mode in the middleware and return it
     pub fn with_mode(mut self, mode: VCRMode) -> Self {
         self.mode = mode;
+        self
+    }
+
+    /// Adjust search behavior for responses
+    pub fn with_search(mut self, search: VCRReplaySearch) -> Self {
+        self.search = search;
         self
     }
 
@@ -178,9 +195,16 @@ impl VCRMiddleware {
 
     fn find_response_in_vcr(&self, req: vcr_cassette::Request) -> Option<vcr_cassette::Response> {
         let cassette = self.storage.lock().unwrap();
-        let skip = *self.skip.lock().unwrap();
-        *self.skip.lock().unwrap() += 1;
-        for interaction in cassette.http_interactions.iter().skip(skip) {
+        let iteractions: Vec<&HttpInteraction> = match self.search {
+            VCRReplaySearch::SkipFound => {
+                let skip = *self.skip.lock().unwrap();
+                *self.skip.lock().unwrap() += 1;
+                cassette.http_interactions.iter().skip(skip).collect()
+            }
+            VCRReplaySearch::SearchAll => cassette.http_interactions.iter().collect(),
+        };
+
+        for interaction in iteractions {
             if interaction.request == req {
                 return Some(interaction.response.clone());
             }
@@ -285,6 +309,7 @@ impl From<vcr_cassette::Cassette> for VCRMiddleware {
             mode: VCRMode::Replay,
             path: None,
             skip: Mutex::new(0),
+            search: VCRReplaySearch::SkipFound,
         }
     }
 }

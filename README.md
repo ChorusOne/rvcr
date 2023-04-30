@@ -23,7 +23,7 @@ To record HTTP requests, initialize client like following
   use rvcr::{VCRMiddleware, VCRMode};
 
   let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-  bundle.push("tests/resources/test.vcr");
+  bundle.push("tests/resources/replay.vcr.json");
 
   let middleware: VCRMiddleware = VCRMiddleware::try_from(bundle.clone())
       .unwrap()
@@ -35,7 +35,14 @@ To record HTTP requests, initialize client like following
 ```
 
 Now `ClientWithMiddleware` instance will be recording requests to a file
-located in `tests/resources/test.vcr` inside the project.
+located in `tests/resources/replay.vcr.json` inside the project.
 
 To use recorded VCR cassette files, replace `.with_mode(VCRMode::Record)`
 with `.with_mode(VCRMode::Replay)`, or omit it, since replay is used by default.
+
+## Search mode
+
+When replaying, rVCR can skip requests already found when searching for
+subsequent requests (the default). To disable skipping requests,
+which is useful, for example, if requests are done in parallel and responses
+may come in random order, use `.with_search(VCRReplaySearch::SearchAll)`.

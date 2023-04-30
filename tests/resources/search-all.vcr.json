@@ -1,0 +1,247 @@
+{
+  "http_interactions": [
+    {
+      "response": {
+        "body": {
+          "encoding": null,
+          "string": "{\n  \"args\": {}, \n  \"headers\": {\n    \"Accept\": \"application/json\", \n    \"Host\": \"127.0.0.1:38282\"\n  }, \n  \"origin\": \"172.21.0.1\", \n  \"url\": \"http://127.0.0.1:38282/get\"\n}\n"
+        },
+        "http_version": "1.1",
+        "status": {
+          "code": 200,
+          "message": "OK"
+        },
+        "headers": {
+          "access-control-allow-credentials": [
+            "true"
+          ],
+          "connection": [
+            "keep-alive"
+          ],
+          "content-type": [
+            "application/json"
+          ],
+          "content-length": [
+            "170"
+          ],
+          "server": [
+            "gunicorn/19.9.0"
+          ],
+          "date": [
+            "Sun, 30 Apr 2023 02:58:45 GMT"
+          ],
+          "access-control-allow-origin": [
+            "*"
+          ]
+        }
+      },
+      "request": {
+        "uri": "http://127.0.0.1:38282/get",
+        "body": {
+          "encoding": null,
+          "string": ""
+        },
+        "method": "get",
+        "headers": {
+          "accept": [
+            "application/json"
+          ]
+        }
+      },
+      "recorded_at": "Sun, 30 Apr 2023 02:58:45 +0000"
+    },
+    {
+      "response": {
+        "body": {
+          "encoding": null,
+          "string": "{\n  \"args\": {}, \n  \"data\": \"test93\", \n  \"files\": {}, \n  \"form\": {}, \n  \"headers\": {\n    \"Accept\": \"application/json\", \n    \"Content-Length\": \"6\", \n    \"Host\": \"127.0.0.1:38282\"\n  }, \n  \"json\": null, \n  \"origin\": \"172.21.0.1\", \n  \"url\": \"http://127.0.0.1:38282/post\"\n}\n"
+        },
+        "http_version": "1.1",
+        "status": {
+          "code": 200,
+          "message": "OK"
+        },
+        "headers": {
+          "access-control-allow-credentials": [
+            "true"
+          ],
+          "content-type": [
+            "application/json"
+          ],
+          "date": [
+            "Sun, 30 Apr 2023 02:58:45 GMT"
+          ],
+          "access-control-allow-origin": [
+            "*"
+          ],
+          "connection": [
+            "keep-alive"
+          ],
+          "server": [
+            "gunicorn/19.9.0"
+          ],
+          "content-length": [
+            "268"
+          ]
+        }
+      },
+      "request": {
+        "uri": "http://127.0.0.1:38282/post",
+        "body": {
+          "encoding": null,
+          "string": "test93"
+        },
+        "method": "post",
+        "headers": {
+          "accept": [
+            "application/json"
+          ]
+        }
+      },
+      "recorded_at": "Sun, 30 Apr 2023 02:58:45 +0000"
+    },
+    {
+      "response": {
+        "body": {
+          "encoding": null,
+          "string": "{\n  \"args\": {}, \n  \"data\": \"test93\", \n  \"files\": {}, \n  \"form\": {}, \n  \"headers\": {\n    \"Accept\": \"application/json\", \n    \"Content-Length\": \"6\", \n    \"Host\": \"127.0.0.1:38282\"\n  }, \n  \"json\": null, \n  \"origin\": \"172.21.0.1\", \n  \"url\": \"http://127.0.0.1:38282/post\"\n}\n"
+        },
+        "http_version": "1.1",
+        "status": {
+          "code": 200,
+          "message": "OK"
+        },
+        "headers": {
+          "access-control-allow-origin": [
+            "*"
+          ],
+          "content-type": [
+            "application/json"
+          ],
+          "content-length": [
+            "268"
+          ],
+          "server": [
+            "gunicorn/19.9.0"
+          ],
+          "date": [
+            "Sun, 30 Apr 2023 02:58:45 GMT"
+          ],
+          "connection": [
+            "keep-alive"
+          ],
+          "access-control-allow-credentials": [
+            "true"
+          ]
+        }
+      },
+      "request": {
+        "uri": "http://127.0.0.1:38282/post",
+        "body": {
+          "encoding": null,
+          "string": "test93"
+        },
+        "method": "post",
+        "headers": {
+          "accept": [
+            "application/json"
+          ]
+        }
+      },
+      "recorded_at": "Sun, 30 Apr 2023 02:58:45 +0000"
+    },
+    {
+      "response": {
+        "body": {
+          "encoding": null,
+          "string": "{\n  \"args\": {}, \n  \"data\": \"\", \n  \"files\": {}, \n  \"form\": {}, \n  \"headers\": {\n    \"Accept\": \"*/*\", \n    \"Host\": \"127.0.0.1:38282\"\n  }, \n  \"json\": null, \n  \"origin\": \"172.21.0.1\", \n  \"url\": \"http://127.0.0.1:38282/post\"\n}\n"
+        },
+        "http_version": "1.1",
+        "status": {
+          "code": 200,
+          "message": "OK"
+        },
+        "headers": {
+          "date": [
+            "Sun, 30 Apr 2023 02:58:45 GMT"
+          ],
+          "access-control-allow-origin": [
+            "*"
+          ],
+          "access-control-allow-credentials": [
+            "true"
+          ],
+          "connection": [
+            "keep-alive"
+          ],
+          "content-length": [
+            "221"
+          ],
+          "server": [
+            "gunicorn/19.9.0"
+          ],
+          "content-type": [
+            "application/json"
+          ]
+        }
+      },
+      "request": {
+        "uri": "http://127.0.0.1:38282/post",
+        "body": {
+          "encoding": null,
+          "string": ""
+        },
+        "method": "post",
+        "headers": {}
+      },
+      "recorded_at": "Sun, 30 Apr 2023 02:58:45 +0000"
+    },
+    {
+      "response": {
+        "body": {
+          "encoding": null,
+          "string": "{\n  \"args\": {}, \n  \"data\": \"\", \n  \"files\": {}, \n  \"form\": {}, \n  \"headers\": {\n    \"Accept\": \"*/*\", \n    \"Host\": \"127.0.0.1:38282\"\n  }, \n  \"json\": null, \n  \"origin\": \"172.21.0.1\", \n  \"url\": \"http://127.0.0.1:38282/post\"\n}\n"
+        },
+        "http_version": "1.1",
+        "status": {
+          "code": 200,
+          "message": "OK"
+        },
+        "headers": {
+          "content-length": [
+            "221"
+          ],
+          "date": [
+            "Sun, 30 Apr 2023 02:58:46 GMT"
+          ],
+          "connection": [
+            "keep-alive"
+          ],
+          "access-control-allow-origin": [
+            "*"
+          ],
+          "content-type": [
+            "application/json"
+          ],
+          "access-control-allow-credentials": [
+            "true"
+          ],
+          "server": [
+            "gunicorn/19.9.0"
+          ]
+        }
+      },
+      "request": {
+        "uri": "http://127.0.0.1:38282/post",
+        "body": {
+          "encoding": null,
+          "string": ""
+        },
+        "method": "post",
+        "headers": {}
+      },
+      "recorded_at": "Sun, 30 Apr 2023 02:58:46 +0000"
+    }
+  ],
+  "recorded_with": "rVCR 0.1.0"
+}

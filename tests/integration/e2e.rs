@@ -1,5 +1,5 @@
 use reqwest::Client;
-use std::{path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 
 use http::header::ACCEPT;
@@ -99,7 +99,7 @@ async fn send_and_compare(
 async fn test_rvcr_replay() {
     SCOPE.clone().init().await;
     let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    bundle.push("tests/resources/test.vcr");
+    bundle.push("tests/resources/replay.vcr.json");
 
     let middleware = VCRMiddleware::try_from(bundle.clone()).unwrap();
 
@@ -138,4 +138,152 @@ async fn test_rvcr_replay() {
         real_client,
     )
     .await;
+}
+
+#[tokio::test]
+async fn test_rvcr_replay_search_all() {
+    SCOPE.clone().init().await;
+    let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    bundle.push("tests/resources/search-all.vcr.json");
+
+    let middleware = VCRMiddleware::try_from(bundle.clone())
+        .unwrap()
+        .with_search(rvcr::VCRReplaySearch::SearchAll);
+
+    let vcr_client: ClientWithMiddleware = ClientBuilder::new(reqwest::Client::new())
+        .with(middleware)
+        .build();
+
+    let real_client = Client::new();
+    send_and_compare(
+        reqwest::Method::GET,
+        "/get",
+        vec![(ACCEPT, "application/json")],
+        None,
+        vcr_client.clone(),
+        real_client.clone(),
+    )
+    .await;
+
+    send_and_compare(
+        reqwest::Method::POST,
+        "/post",
+        vec![(ACCEPT, "application/json")],
+        Some("test93"),
+        vcr_client.clone(),
+        real_client.clone(),
+    )
+    .await;
+
+    send_and_compare(
+        reqwest::Method::POST,
+        "/post",
+        vec![(ACCEPT, "application/json")],
+        Some("test93"),
+        vcr_client.clone(),
+        real_client,
+    )
+    .await;
+
+    let req1 = vcr_client
+        .request(
+            reqwest::Method::POST,
+            format!("{}{}", ADDRESS.to_string(), "/post"),
+        )
+        .send()
+        .await
+        .expect("Failed to get response");
+
+    // Ensure next request will get Date with 1 second more
+    // when recording
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let req2 = vcr_client
+        .request(
+            reqwest::Method::POST,
+            format!("{}{}", ADDRESS.to_string(), "/post"),
+        )
+        .send()
+        .await
+        .expect("Failed to get response");
+
+    let header_date_1 = req1.headers().get("date").unwrap();
+    let header_date_2 = req2.headers().get("date").unwrap();
+
+    // Since first request was identical to second, first response
+    // was returned for second request with SearchAll
+    assert_eq!(header_date_1, header_date_2);
+}
+
+#[tokio::test]
+async fn test_rvcr_replay_skip_found() {
+    SCOPE.clone().init().await;
+    let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    bundle.push("tests/resources/skip-found.vcr.json");
+
+    let middleware = VCRMiddleware::try_from(bundle.clone())
+        .unwrap()
+        .with_search(rvcr::VCRReplaySearch::SkipFound);
+
+    let vcr_client: ClientWithMiddleware = ClientBuilder::new(reqwest::Client::new())
+        .with(middleware)
+        .build();
+
+    let real_client = Client::new();
+    send_and_compare(
+        reqwest::Method::GET,
+        "/get",
+        vec![(ACCEPT, "application/json")],
+        None,
+        vcr_client.clone(),
+        real_client.clone(),
+    )
+    .await;
+
+    send_and_compare(
+        reqwest::Method::POST,
+        "/post",
+        vec![(ACCEPT, "application/json")],
+        Some("test93"),
+        vcr_client.clone(),
+        real_client.clone(),
+    )
+    .await;
+
+    send_and_compare(
+        reqwest::Method::POST,
+        "/post",
+        vec![(ACCEPT, "application/json")],
+        Some("test93"),
+        vcr_client.clone(),
+        real_client,
+    )
+    .await;
+
+    let req1 = vcr_client
+        .request(
+            reqwest::Method::POST,
+            format!("{}{}", ADDRESS.to_string(), "/post"),
+        )
+        .send()
+        .await
+        .expect("Failed to get response");
+
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let req2 = vcr_client
+        .request(
+            reqwest::Method::POST,
+            format!("{}{}", ADDRESS.to_string(), "/post"),
+        )
+        .send()
+        .await
+        .expect("Failed to get response");
+
+    let header_date_1 = req1.headers().get("date").unwrap();
+    let header_date_2 = req2.headers().get("date").unwrap();
+
+    // Despite first request was identical to second, second response
+    // was returned for second request with SkipFound
+    assert_ne!(header_date_1, header_date_2);
 }
