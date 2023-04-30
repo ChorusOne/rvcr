@@ -18,20 +18,20 @@
           "access-control-allow-origin": [
             "*"
           ],
-          "connection": [
-            "keep-alive"
+          "content-length": [
+            "170"
           ],
           "server": [
             "gunicorn/19.9.0"
-          ],
-          "content-length": [
-            "170"
           ],
           "content-type": [
             "application/json"
           ],
           "date": [
-            "Thu, 27 Apr 2023 02:21:55 GMT"
+            "Sun, 30 Apr 2023 02:58:45 GMT"
+          ],
+          "connection": [
+            "keep-alive"
           ]
         }
       },
@@ -48,7 +48,7 @@
           ]
         }
       },
-      "recorded_at": "Thu, 27 Apr 2023 02:21:55 +0000"
+      "recorded_at": "Sun, 30 Apr 2023 02:58:45 +0000"
     },
     {
       "response": {
@@ -62,11 +62,8 @@
           "message": "OK"
         },
         "headers": {
-          "server": [
-            "gunicorn/19.9.0"
-          ],
-          "date": [
-            "Thu, 27 Apr 2023 02:21:55 GMT"
+          "access-control-allow-credentials": [
+            "true"
           ],
           "connection": [
             "keep-alive"
@@ -74,14 +71,17 @@
           "access-control-allow-origin": [
             "*"
           ],
+          "date": [
+            "Sun, 30 Apr 2023 02:58:45 GMT"
+          ],
           "content-type": [
             "application/json"
           ],
-          "access-control-allow-credentials": [
-            "true"
-          ],
           "content-length": [
             "267"
+          ],
+          "server": [
+            "gunicorn/19.9.0"
           ]
         }
       },
@@ -98,7 +98,7 @@
           ]
         }
       },
-      "recorded_at": "Thu, 27 Apr 2023 02:21:55 +0000"
+      "recorded_at": "Sun, 30 Apr 2023 02:58:45 +0000"
     },
     {
       "response": {
@@ -112,26 +112,26 @@
           "message": "OK"
         },
         "headers": {
+          "content-type": [
+            "application/json"
+          ],
+          "access-control-allow-credentials": [
+            "true"
+          ],
           "date": [
-            "Thu, 27 Apr 2023 02:21:55 GMT"
+            "Sun, 30 Apr 2023 02:58:45 GMT"
           ],
           "connection": [
             "keep-alive"
           ],
-          "content-type": [
-            "application/json"
-          ],
           "server": [
             "gunicorn/19.9.0"
-          ],
-          "access-control-allow-origin": [
-            "*"
           ],
           "content-length": [
             "267"
           ],
-          "access-control-allow-credentials": [
-            "true"
+          "access-control-allow-origin": [
+            "*"
           ]
         }
       },
@@ -148,7 +148,7 @@
           ]
         }
       },
-      "recorded_at": "Thu, 27 Apr 2023 02:21:55 +0000"
+      "recorded_at": "Sun, 30 Apr 2023 02:58:45 +0000"
     }
   ],
   "recorded_with": "rVCR 0.1.0"
