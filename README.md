@@ -1,7 +1,7 @@
 rvcr
 ====
 
-![crates.io](https://img.shields.io/crates/v/rvcr.svg)
+[![crates.io](https://img.shields.io/crates/v/rvcr.svg)](https://crates.io/crates/rvcr)
 
 Record-and-replay testing middleware for `reqwest` http client.
 
