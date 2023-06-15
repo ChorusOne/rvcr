@@ -287,3 +287,31 @@ async fn test_rvcr_replay_skip_found() {
     // was returned for second request with SkipFound
     assert_ne!(header_date_1, header_date_2);
 }
+
+#[cfg(feature = "compress")]
+#[tokio::test]
+async fn test_rvcr_replay_compressed() {
+    SCOPE.clone().init().await;
+    let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    bundle.push("tests/resources/replay.vcr.zip");
+
+    let middleware = VCRMiddleware::try_from(bundle.clone())
+        .unwrap()
+        .compressed(true);
+
+    let vcr_client: ClientWithMiddleware = ClientBuilder::new(reqwest::Client::new())
+        .with(middleware)
+        .build();
+
+    let real_client = Client::new();
+
+    send_and_compare(
+        reqwest::Method::GET,
+        "/get",
+        vec![(ACCEPT, "application/json")],
+        None,
+        vcr_client.clone(),
+        real_client.clone(),
+    )
+    .await;
+}
