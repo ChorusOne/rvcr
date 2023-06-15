@@ -48,3 +48,12 @@ When replaying, rVCR can skip requests already found when searching for
 subsequent requests (the default). To disable skipping requests,
 which is useful, for example, if requests are done in parallel and responses
 may come in random order, use `.with_search(VCRReplaySearch::SearchAll)`.
+
+
+## VCR cassette fie compression
+
+Sometimes VCR files can be too large and this harder to maintain in a
+version control system.
+
+To save some space and turn on bzip2 compression for artifacts,
+use `.compression(true)` method of the builder.

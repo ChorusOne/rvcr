@@ -34,6 +34,7 @@ jobs:
           cargo check
           docker-compose up -d
           cargo test --all
+          cargo test --features=compress --all
 
       - name: Build
         run: |

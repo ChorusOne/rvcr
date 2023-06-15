@@ -26,6 +26,10 @@
 //!
 //! To use recorded VCR cassette files, replace `.with_mode(VCRMode::Record)`
 //!  with `.with_mode(VCRMode::Replay)`
+#[cfg(feature = "compress")]
+use std::io::Read;
+#[cfg(feature = "compress")]
+use std::io::Write;
 use std::{collections::HashMap, fs, path::PathBuf, str::FromStr, sync::Mutex};
 
 use base64::{engine::general_purpose, Engine};
@@ -46,6 +50,7 @@ pub struct VCRMiddleware {
     mode: VCRMode,
     search: VCRReplaySearch,
     skip: Mutex<usize>,
+    compress: bool,
 }
 
 /// VCR mode switcher
@@ -90,6 +95,13 @@ impl VCRMiddleware {
     /// Adjust path in the middleware and return it
     pub fn with_path(mut self, path: impl Into<PathBuf>) -> Self {
         self.path = Some(path.into());
+        self
+    }
+
+    /// Make VCR files to be compressed before creating
+    #[cfg(feature = "compress")]
+    pub fn compressed(mut self, compress: bool) -> Self {
+        self.compress = compress;
         self
     }
 
@@ -310,6 +322,7 @@ impl From<vcr_cassette::Cassette> for VCRMiddleware {
             path: None,
             skip: Mutex::new(0),
             search: VCRReplaySearch::SkipFound,
+            compress: false,
         }
     }
 }
@@ -323,12 +336,29 @@ impl Drop for VCRMiddleware {
                 .clone()
                 .unwrap_or(format!(".rvcr-{}.vcr", chrono::Utc::now().timestamp()).into());
             let cassette = self.storage.lock().unwrap();
-            fs::write(
-                path.clone(),
-                serde_json::to_string_pretty(&*cassette).unwrap(),
-            )
-            .unwrap_or_else(|_| panic!("Can not write cassette contents to {path:?}"));
-            tracing::info!("Written VCR cassette file at {path:?}");
+
+            let contents: String = serde_json::to_string_pretty(&*cassette).unwrap();
+
+            #[cfg(feature = "compress")]
+            if self.compress {
+                let file = std::fs::File::create(path.clone()).unwrap();
+
+                let mut zip = zip::ZipWriter::new(file);
+
+                let options = zip::write::FileOptions::default()
+                    .compression_method(zip::CompressionMethod::Bzip2)
+                    .compression_level(Some(9))
+                    .unix_permissions(0o644);
+                zip.start_file("test.vcr.json", options).unwrap();
+                zip.write_all(contents.as_bytes()).unwrap();
+                zip.finish().unwrap();
+            }
+
+            if !self.compress {
+                fs::write(path.clone(), contents.as_bytes())
+                    .unwrap_or_else(|_| panic!("Can not write cassette contents to {path:?}"));
+                tracing::info!("Written VCR cassette file at {path:?}");
+            }
         }
     }
 }
@@ -338,13 +368,17 @@ impl Drop for VCRMiddleware {
 /// For simplicity, support JSON format only for now
 impl TryFrom<PathBuf> for VCRMiddleware {
     fn try_from(pb: PathBuf) -> Result<Self, Self::Error> {
-        let cassette: vcr_cassette::Cassette = if !pb.exists() {
-            vcr_cassette::Cassette {
-                http_interactions: vec![],
-                recorded_with: RECORDER.to_string(),
-            }
+        let empty = vcr_cassette::Cassette {
+            http_interactions: vec![],
+            recorded_with: RECORDER.to_string(),
+        };
+
+        let mut mw = Self::from(empty);
+        mw.path = Some(pb.clone());
+        if !pb.exists() {
+            Ok(mw)
         } else {
-            let content = fs::read_to_string(pb.clone()).map_err(|e| {
+            let content = fs::read(pb.clone()).map_err(|e| {
                 tracing::error!("Failed reading VCR cassette: {e}");
                 format!(
                     "Failed to read VCR cassette from path {}",
@@ -352,18 +386,41 @@ impl TryFrom<PathBuf> for VCRMiddleware {
                 )
             })?;
 
-            serde_json::from_str(&content).map_err(|e| {
-                tracing::error!("Failed deserializing VCR cassette: {e}");
-                format!(
-                    "Failed to deserialize VCR cassette from path {}",
-                    pb.to_str().unwrap()
-                )
-            })?
-        };
+            #[cfg(feature = "compress")]
+            let content = {
+                let file = fs::File::open(mw.path.clone().unwrap()).unwrap();
+                match zip::ZipArchive::new(file) {
+                    Ok(mut archive) => {
+                        let mut content = content;
+                        content.clear();
+                        let contents = archive.by_name("test.vcr.json");
+                        let mut contents =
+                            contents.expect("test.vcr.json file is missing in zip archive");
+                        contents
+                            .read_to_end(&mut content)
+                            .expect("Can not read test.vcr.json from zip archive");
+                        content
+                    }
+                    Err(e) => {
+                        tracing::debug!("Failed to detect file as zip: {e:?}");
+                        content
+                    }
+                }
+            };
 
-        let mut mw = Self::from(cassette);
-        mw.path = Some(pb);
-        Ok(mw)
+            let cassette: vcr_cassette::Cassette =
+                serde_json::from_slice(&content).map_err(|e| {
+                    tracing::error!("Failed deserializing VCR cassette: {e}");
+                    format!(
+                        "Failed to deserialize VCR cassette from path {}",
+                        pb.to_str().unwrap()
+                    )
+                })?;
+
+            let mut mw = Self::from(cassette);
+            mw.path = Some(pb);
+            Ok(mw)
+        }
     }
 
     type Error = String;

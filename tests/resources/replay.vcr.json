@@ -15,6 +15,12 @@
           "access-control-allow-credentials": [
             "true"
           ],
+          "connection": [
+            "keep-alive"
+          ],
+          "content-type": [
+            "application/json"
+          ],
           "access-control-allow-origin": [
             "*"
           ],
@@ -24,14 +30,8 @@
           "server": [
             "gunicorn/19.9.0"
           ],
-          "content-type": [
-            "application/json"
-          ],
           "date": [
             "Sun, 30 Apr 2023 02:58:45 GMT"
-          ],
-          "connection": [
-            "keep-alive"
           ]
         }
       },
@@ -62,23 +62,23 @@
           "message": "OK"
         },
         "headers": {
+          "content-length": [
+            "267"
+          ],
+          "content-type": [
+            "application/json"
+          ],
           "access-control-allow-credentials": [
             "true"
           ],
           "connection": [
             "keep-alive"
           ],
-          "access-control-allow-origin": [
-            "*"
-          ],
           "date": [
             "Sun, 30 Apr 2023 02:58:45 GMT"
           ],
-          "content-type": [
-            "application/json"
-          ],
-          "content-length": [
-            "267"
+          "access-control-allow-origin": [
+            "*"
           ],
           "server": [
             "gunicorn/19.9.0"
@@ -112,14 +112,8 @@
           "message": "OK"
         },
         "headers": {
-          "content-type": [
-            "application/json"
-          ],
-          "access-control-allow-credentials": [
-            "true"
-          ],
-          "date": [
-            "Sun, 30 Apr 2023 02:58:45 GMT"
+          "access-control-allow-origin": [
+            "*"
           ],
           "connection": [
             "keep-alive"
@@ -130,8 +124,14 @@
           "content-length": [
             "267"
           ],
-          "access-control-allow-origin": [
-            "*"
+          "access-control-allow-credentials": [
+            "true"
+          ],
+          "content-type": [
+            "application/json"
+          ],
+          "date": [
+            "Sun, 30 Apr 2023 02:58:45 GMT"
           ]
         }
       },
