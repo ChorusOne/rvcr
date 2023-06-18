@@ -56,7 +56,7 @@ pub struct VCRMiddleware {
 /// VCR mode switcher
 #[derive(Eq, PartialEq)]
 pub enum VCRMode {
-    /// Record requests to the local VCR cassette files
+    /// Record requests to the local VCR cassette files. Existing files will be overwritten
     Record,
     /// Replay requests using local files
     Replay,
