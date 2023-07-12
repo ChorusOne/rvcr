@@ -292,23 +292,14 @@ impl Middleware for VCRMiddleware {
                 let converted_response = self.vcr_to_response(vcr_response.clone());
                 self.record(vcr_request, vcr_response);
                 Ok(converted_response)
-            }
+            },
             VCRMode::Replay => {
-                let vcr_response = self.find_response_in_vcr(vcr_request).unwrap_or(
-                    // Empty 404 response
-                    vcr_cassette::Response {
-                        body: vcr_cassette::Body::from_str("").unwrap(),
-                        http_version: Some(vcr_cassette::Version::Http1_1),
-                        status: vcr_cassette::Status {
-                            code: 404,
-                            message: "Not found in VCR".to_string(),
-                        },
-                        headers: HashMap::new(),
-                    },
+                let vcr_response = self.find_response_in_vcr(vcr_request).unwrap_or_else(||
+                    panic!("Can not read cassette contents from {:?}", self.path)
                 );
                 let response = self.vcr_to_response(vcr_response);
                 Ok(response)
-            }
+            },
         }
     }
 }
