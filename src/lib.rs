@@ -30,7 +30,7 @@
 use std::io::Read;
 #[cfg(feature = "compress")]
 use std::io::Write;
-use std::{collections::HashMap, fs, path::PathBuf, str::FromStr, sync::Mutex};
+use std::{fs, path::PathBuf, str::FromStr, sync::Mutex};
 
 use base64::{engine::general_purpose, Engine};
 use reqwest_middleware::Middleware;
@@ -292,14 +292,14 @@ impl Middleware for VCRMiddleware {
                 let converted_response = self.vcr_to_response(vcr_response.clone());
                 self.record(vcr_request, vcr_response);
                 Ok(converted_response)
-            },
+            }
             VCRMode::Replay => {
-                let vcr_response = self.find_response_in_vcr(vcr_request).unwrap_or_else(||
+                let vcr_response = self.find_response_in_vcr(vcr_request).unwrap_or_else(|| {
                     panic!("Can not read cassette contents from {:?}", self.path)
-                );
+                });
                 let response = self.vcr_to_response(vcr_response);
                 Ok(response)
-            },
+            }
         }
     }
 }
