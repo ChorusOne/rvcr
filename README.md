@@ -49,6 +49,41 @@ subsequent requests (the default). To disable skipping requests,
 which is useful, for example, if requests are done in parallel and responses
 may come in random order, use `.with_search(VCRReplaySearch::SearchAll)`.
 
+## Filtering sensitive information
+
+Your requests and responses may contain sensitive information such as authentication details, user
+information etc. which you don't want to commit to your source control.
+
+You can modify requests and responses before they are stored and restored using
+`with_modify_request` and `with_modify_response`.
+
+You can change anything in the body, URI, headers etc. to hide any information you want. Here's an
+example which filters sensitive information in query parameters:
+
+```rust
+  let middleware = VCRMiddleware::try_from(bundle.clone())
+      .unwrap()
+      .with_mode(VCR::Record)
+      .with_modify_request(|req| {
+          let sensitive_query_params = ["access_token", "appsecret_proof"];
+
+          // Replace sensitive data in query params
+          let filtered_query_params = req.uri.clone().query_pairs().map(|(k, v)| {
+              if sensitive_query_params.contains(&k.as_ref()) {
+                  (k.clone(), Cow::from(k.to_uppercase()))
+              } else {
+                  (k, v)
+              }
+          });
+
+          // Overwrite query params with filtered ones
+          req.uri
+              .query_pairs_mut()
+              .clear()
+              .extend_pairs(filtered_query_params)
+              .finish();
+      });
+```
 
 ## VCR cassette fie compression
 

@@ -51,7 +51,12 @@ pub struct VCRMiddleware {
     search: VCRReplaySearch,
     skip: Mutex<usize>,
     compress: bool,
+    modify_request: Option<Box<RequestModifier>>,
+    modify_response: Option<Box<ResponseModifier>>,
 }
+
+type RequestModifier = dyn Fn(&mut vcr_cassette::Request) + Send + Sync + 'static;
+type ResponseModifier = dyn Fn(&mut vcr_cassette::Response) + Send + Sync + 'static;
 
 /// VCR mode switcher
 #[derive(Eq, PartialEq)]
@@ -83,6 +88,20 @@ impl VCRMiddleware {
     /// Adjust mode in the middleware and return it
     pub fn with_mode(mut self, mode: VCRMode) -> Self {
         self.mode = mode;
+        self
+    }
+
+     pub fn with_modify_request<F>(mut self, modifier: F) -> Self
+        where F: Fn(&mut vcr_cassette::Request) + Send + Sync + 'static
+    {
+        self.modify_request.replace(Box::new(modifier));
+        self
+    }
+
+    pub fn with_modify_response<F>(mut self, modifier: F) -> Self
+        where F: Fn(&mut vcr_cassette::Response) + Send + Sync + 'static
+    {
+        self.modify_response.replace(Box::new(modifier));
         self
     }
 
@@ -174,12 +193,18 @@ impl VCRMiddleware {
 
         let headers = self.headers_to_vcr(req.headers());
 
-        vcr_cassette::Request {
+        let mut vcr_request = vcr_cassette::Request {
             body,
             method,
             uri: req.url().to_owned(),
             headers,
+        };
+
+        if let Some(ref modifier) = self.modify_request {
+            modifier(&mut vcr_request);
         }
+
+        vcr_request
     }
 
     async fn response_to_vcr(&self, resp: reqwest::Response) -> vcr_cassette::Response {
@@ -197,12 +222,18 @@ impl VCRMiddleware {
                 .to_string(),
         };
 
-        vcr_cassette::Response {
+        let mut vcr_response = vcr_cassette::Response {
             body,
             http_version,
             status,
             headers,
+        };
+
+        if let Some(ref modifier) = self.modify_response {
+            modifier(&mut vcr_response);
         }
+
+        vcr_response
     }
 
     fn find_response_in_vcr(&self, req: vcr_cassette::Request) -> Option<vcr_cassette::Response> {
@@ -314,6 +345,8 @@ impl From<vcr_cassette::Cassette> for VCRMiddleware {
             skip: Mutex::new(0),
             search: VCRReplaySearch::SkipFound,
             compress: false,
+            modify_request: None,
+            modify_response: None,
         }
     }
 }
