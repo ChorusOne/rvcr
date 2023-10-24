@@ -59,7 +59,7 @@ type RequestModifier = dyn Fn(&mut vcr_cassette::Request) + Send + Sync + 'stati
 type ResponseModifier = dyn Fn(&mut vcr_cassette::Response) + Send + Sync + 'static;
 
 /// VCR mode switcher
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Clone)]
 pub enum VCRMode {
     /// Record requests to the local VCR cassette files. Existing files will be overwritten
     Record,
