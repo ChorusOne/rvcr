@@ -42,3 +42,5 @@ vcr-cassette = "2"
 [dev-dependencies]
 tokio = { version = "1.17.0", features = ["full"] }
 tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
+url = "2.4"
+

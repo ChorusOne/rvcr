@@ -1,50 +1,9 @@
 use reqwest::Client;
-use std::{path::PathBuf, sync::Arc, time::Duration};
-use tokio::sync::Mutex;
+use std::{path::PathBuf, time::Duration};
 
 use http::header::ACCEPT;
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use rvcr::VCRMiddleware;
-use tracing_subscriber::{
-    filter, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt, Layer,
-};
-
-lazy_static::lazy_static! {
-    static ref SCOPE: TestScope = TestScope::default();
-    static ref ADDRESS: String = String::from("http://127.0.0.1:38282");
-}
-
-#[derive(Clone)]
-pub struct TestScope {
-    pub initialized: Arc<Mutex<bool>>,
-}
-
-impl Default for TestScope {
-    fn default() -> Self {
-        Self {
-            initialized: Arc::new(Mutex::new(false)),
-        }
-    }
-}
-
-impl TestScope {
-    pub async fn init(self) {
-        let mut inited = self.initialized.lock().await;
-        if *inited == false {
-            if std::env::var("TEST_LOG").is_ok() {
-                let stdout_log = tracing_subscriber::fmt::layer().pretty();
-                tracing_subscriber::registry()
-                    .with(
-                        stdout_log
-                            // Add an `INFO` filter to the stdout logging layer
-                            .with_filter(filter::LevelFilter::DEBUG),
-                    )
-                    .init();
-            }
-            *inited = true;
-        }
-    }
-}
 
 async fn send_and_compare(
     method: reqwest::Method,
@@ -54,9 +13,12 @@ async fn send_and_compare(
     vcr_client: ClientWithMiddleware,
     real_client: reqwest::Client,
 ) {
-    let mut req1 = vcr_client.request(method.clone(), format!("{}{}", ADDRESS.to_string(), path));
+    let mut req1 = vcr_client.request(
+        method.clone(),
+        format!("{}{}", crate::ADDRESS.to_string(), path),
+    );
 
-    let mut req2 = real_client.request(method, format!("{}{}", ADDRESS.to_string(), path));
+    let mut req2 = real_client.request(method, format!("{}{}", crate::ADDRESS.to_string(), path));
 
     for (header_name, header_value) in headers {
         req1 = req1.header(header_name.clone(), header_value);
@@ -97,7 +59,7 @@ async fn send_and_compare(
 
 #[tokio::test]
 async fn test_rvcr_replay() {
-    SCOPE.clone().init().await;
+    crate::SCOPE.clone().init().await;
     let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     bundle.push("tests/resources/replay.vcr.json");
 
@@ -142,7 +104,7 @@ async fn test_rvcr_replay() {
 
 #[tokio::test]
 async fn test_rvcr_replay_search_all() {
-    SCOPE.clone().init().await;
+    crate::SCOPE.clone().init().await;
     let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     bundle.push("tests/resources/search-all.vcr.json");
 
@@ -188,7 +150,7 @@ async fn test_rvcr_replay_search_all() {
     let req1 = vcr_client
         .request(
             reqwest::Method::POST,
-            format!("{}{}", ADDRESS.to_string(), "/post"),
+            format!("{}{}", crate::ADDRESS.to_string(), "/post"),
         )
         .send()
         .await
@@ -201,7 +163,7 @@ async fn test_rvcr_replay_search_all() {
     let req2 = vcr_client
         .request(
             reqwest::Method::POST,
-            format!("{}{}", ADDRESS.to_string(), "/post"),
+            format!("{}{}", crate::ADDRESS.to_string(), "/post"),
         )
         .send()
         .await
@@ -217,7 +179,7 @@ async fn test_rvcr_replay_search_all() {
 
 #[tokio::test]
 async fn test_rvcr_replay_skip_found() {
-    SCOPE.clone().init().await;
+    crate::SCOPE.clone().init().await;
     let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     bundle.push("tests/resources/skip-found.vcr.json");
 
@@ -263,7 +225,7 @@ async fn test_rvcr_replay_skip_found() {
     let req1 = vcr_client
         .request(
             reqwest::Method::POST,
-            format!("{}{}", ADDRESS.to_string(), "/post"),
+            format!("{}{}", crate::ADDRESS.to_string(), "/post"),
         )
         .send()
         .await
@@ -274,7 +236,7 @@ async fn test_rvcr_replay_skip_found() {
     let req2 = vcr_client
         .request(
             reqwest::Method::POST,
-            format!("{}{}", ADDRESS.to_string(), "/post"),
+            format!("{}{}", crate::ADDRESS.to_string(), "/post"),
         )
         .send()
         .await
@@ -291,7 +253,7 @@ async fn test_rvcr_replay_skip_found() {
 #[cfg(feature = "compress")]
 #[tokio::test]
 async fn test_rvcr_replay_compressed() {
-    SCOPE.clone().init().await;
+    crate::SCOPE.clone().init().await;
     let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     bundle.push("tests/resources/replay.vcr.zip");
 
