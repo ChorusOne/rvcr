@@ -91,15 +91,17 @@ impl VCRMiddleware {
         self
     }
 
-     pub fn with_modify_request<F>(mut self, modifier: F) -> Self
-        where F: Fn(&mut vcr_cassette::Request) + Send + Sync + 'static
+    pub fn with_modify_request<F>(mut self, modifier: F) -> Self
+    where
+        F: Fn(&mut vcr_cassette::Request) + Send + Sync + 'static,
     {
         self.modify_request.replace(Box::new(modifier));
         self
     }
 
     pub fn with_modify_response<F>(mut self, modifier: F) -> Self
-        where F: Fn(&mut vcr_cassette::Response) + Send + Sync + 'static
+    where
+        F: Fn(&mut vcr_cassette::Response) + Send + Sync + 'static,
     {
         self.modify_response.replace(Box::new(modifier));
         self
