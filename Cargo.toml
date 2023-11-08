@@ -1,6 +1,6 @@
 [package]
 name = "rvcr"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 description = "Record-and-replay HTTP testing for requests"
 repository = "https://github.com/ChorusOne/rvcr/"
