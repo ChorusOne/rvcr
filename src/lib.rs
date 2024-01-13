@@ -238,6 +238,13 @@ impl VCRMiddleware {
         vcr_response
     }
 
+    fn header_values_to_string(&self, header_values: Option<&Vec<String>>) -> String {
+        match header_values {
+            Some(values) => values.join(", "),
+            None => "<MISSING>".to_string(),
+        }
+    }
+
     fn find_response_in_vcr(&self, req: vcr_cassette::Request) -> Option<vcr_cassette::Response> {
         let cassette = self.storage.lock().unwrap();
         let iteractions: Vec<&HttpInteraction> = match self.search {
@@ -249,11 +256,66 @@ impl VCRMiddleware {
             VCRReplaySearch::SearchAll => cassette.http_interactions.iter().collect(),
         };
 
+        // save diff in a string for debugging purposes
+        let mut diff = String::new();
         for interaction in iteractions {
             if interaction.request == req {
                 return Some(interaction.response.clone());
+            } else {
+                diff.push_str(&format!(
+                    "Unmatched {method:?} to {uri}:\n",
+                    method = interaction.request.method,
+                    uri = interaction.request.uri.as_str()
+                ));
+                if interaction.request.method != req.method {
+                    diff.push_str(&format!(
+                        "  Method differs: recorded {expected:?}, got {got:?}\n",
+                        expected = interaction.request.method,
+                        got = req.method
+                    ));
+                }
+                if interaction.request.uri != req.uri {
+                    diff.push_str("  URI differs:\n");
+                    diff.push_str(&format!(
+                        "    recorded: \"{}\"\n",
+                        interaction.request.uri.as_str()
+                    ));
+                    diff.push_str(&format!("    got:      \"{}\"\n", req.uri.as_str()));
+                }
+                if interaction.request.headers != req.headers {
+                    diff.push_str("  Headers differ:\n");
+                    for (recorded_header_name, recorded_header_values) in
+                        &interaction.request.headers
+                    {
+                        let expected = self.header_values_to_string(Some(recorded_header_values));
+                        let got =
+                            self.header_values_to_string(req.headers.get(recorded_header_name));
+                        if expected != got {
+                            diff.push_str(&format!("    {}:\n", recorded_header_name));
+                            diff.push_str(&format!("      recorded: \"{}\"\n", expected));
+                            diff.push_str(&format!("      got:      \"{}\"\n", got));
+                        }
+                    }
+                    for (got_header_name, got_header_values) in &req.headers {
+                        if !interaction.request.headers.contains_key(got_header_name) {
+                            let got = self.header_values_to_string(Some(got_header_values));
+                            diff.push_str(&format!("    {}:\n", got_header_name));
+                            diff.push_str(&format!("      recorded: <MISSING>\n"));
+                            diff.push_str(&format!("      got:      \"{}\"\n", got));
+                        }
+                    }
+                }
+                if interaction.request.body != req.body {
+                    diff.push_str("  Body differs:\n");
+                    diff.push_str(&format!(
+                        "    recorded: \"{}\"\n",
+                        interaction.request.body.string
+                    ));
+                    diff.push_str(&format!("    got:      \"{}\"\n", req.body.string));
+                }
             }
         }
+        eprintln!("{}", diff);
         None
     }
 
@@ -328,7 +390,10 @@ impl Middleware for VCRMiddleware {
             }
             VCRMode::Replay => {
                 let vcr_response = self.find_response_in_vcr(vcr_request).unwrap_or_else(|| {
-                    panic!("Can not read cassette contents from {:?}", self.path)
+                    panic!(
+                        "Cannot find corresponding request in cassette {:?}",
+                        self.path
+                    )
                 });
                 let response = self.vcr_to_response(vcr_response);
                 Ok(response)
