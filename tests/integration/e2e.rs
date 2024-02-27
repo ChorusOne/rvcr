@@ -102,6 +102,56 @@ async fn test_rvcr_replay() {
     .await;
 }
 
+#[tracing_test::traced_test]
+#[tokio::test]
+async fn test_rvcr_failed_debug() {
+    crate::SCOPE.clone().init().await;
+    let mut bundle = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    bundle.push("tests/resources/replay.vcr.json");
+
+    let middleware = VCRMiddleware::try_from(bundle.clone())
+        .unwrap()
+        .with_rich_diff(true);
+
+    let vcr_client: ClientWithMiddleware = ClientBuilder::new(reqwest::Client::new())
+        .with(middleware)
+        .build();
+
+    let mut unmatched_req = vcr_client.request(
+        reqwest::Method::POST,
+        format!("{}/post", crate::ADDRESS.to_string()),
+    );
+
+    unmatched_req = unmatched_req.header(ACCEPT, "text/html");
+    unmatched_req = unmatched_req.body("Something different".to_string());
+    let unmatched_req = unmatched_req.build().unwrap();
+
+    let result = vcr_client.execute(unmatched_req).await;
+    assert!(result.is_err());
+
+    let expected_logs = r#"Did not match Get to http://127.0.0.1:38282/get:
+  Method differs: recorded Get, got Post
+  URI differs:
+    recorded: "http://127.0.0.1:38282/get"
+    got:      "http://127.0.0.1:38282/post"
+  Headers differ:
+    accept:
+      recorded: "application/json"
+      got:      "text/html"
+  Body differs:
+    recorded: ""
+    got:      "Something different""#;
+    logs_assert(|lines: &[&str]| {
+        let processed_logs = lines
+            .iter()
+            .map(|line| line.split("rvcr: ").collect::<Vec<&str>>()[1])
+            .collect::<Vec<&str>>()
+            .join("\n");
+        assert!(processed_logs.contains(expected_logs));
+        Ok(())
+    });
+}
+
 #[tokio::test]
 async fn test_rvcr_replay_search_all() {
     crate::SCOPE.clone().init().await;

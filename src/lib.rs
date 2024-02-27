@@ -51,6 +51,7 @@ pub struct VCRMiddleware {
     search: VCRReplaySearch,
     skip: Mutex<usize>,
     compress: bool,
+    rich_diff: bool,
     modify_request: Option<Box<RequestModifier>>,
     modify_response: Option<Box<ResponseModifier>>,
 }
@@ -116,6 +117,12 @@ impl VCRMiddleware {
     /// Adjust path in the middleware and return it
     pub fn with_path(mut self, path: impl Into<PathBuf>) -> Self {
         self.path = Some(path.into());
+        self
+    }
+
+    /// Adjust rich diff in the middleware and return it
+    pub fn with_rich_diff(mut self, rich_diff: bool) -> Self {
+        self.rich_diff = rich_diff;
         self
     }
 
@@ -256,14 +263,20 @@ impl VCRMiddleware {
             VCRReplaySearch::SearchAll => cassette.http_interactions.iter().collect(),
         };
 
-        // save diff in a string for debugging purposes
-        let mut diff = String::new();
+        // we only want to log match failures if no match is found, so capture
+        // everything at the beginning and then output it all at once if none
+        // are found
+        let mut diff_log = if self.rich_diff {
+            Some(String::new())
+        } else {
+            None
+        };
         for interaction in iteractions {
             if interaction.request == req {
                 return Some(interaction.response.clone());
-            } else {
+            } else if let Some(diff) = diff_log.as_mut() {
                 diff.push_str(&format!(
-                    "Unmatched {method:?} to {uri}:\n",
+                    "Did not match {method:?} to {uri}:\n",
                     method = interaction.request.method,
                     uri = interaction.request.uri.as_str()
                 ));
@@ -313,9 +326,16 @@ impl VCRMiddleware {
                     ));
                     diff.push_str(&format!("    got:      \"{}\"\n", req.body.string));
                 }
+                diff.push_str("\n");
             }
         }
-        eprintln!("{}", diff);
+        if let Some(diff) = diff_log {
+            // tracing_test does not appear to capture multiline outputs for test
+            // assertion purposes, so we print each line out separately
+            for line in diff.split('\n') {
+                tracing::info!("{}", line);
+            }
+        }
         None
     }
 
@@ -388,16 +408,21 @@ impl Middleware for VCRMiddleware {
                 self.record(vcr_request, vcr_response);
                 Ok(converted_response)
             }
-            VCRMode::Replay => {
-                let vcr_response = self.find_response_in_vcr(vcr_request).unwrap_or_else(|| {
-                    panic!(
+            VCRMode::Replay => match self.find_response_in_vcr(vcr_request) {
+                None => {
+                    let message = format!(
                         "Cannot find corresponding request in cassette {:?}",
-                        self.path
-                    )
-                });
-                let response = self.vcr_to_response(vcr_response);
-                Ok(response)
-            }
+                        self.path,
+                    );
+                    Err(reqwest_middleware::Error::Middleware(anyhow::anyhow!(
+                        message
+                    )))
+                }
+                Some(response) => {
+                    let response = self.vcr_to_response(response);
+                    Ok(response)
+                }
+            },
         }
     }
 }
@@ -412,6 +437,7 @@ impl From<vcr_cassette::Cassette> for VCRMiddleware {
             skip: Mutex::new(0),
             search: VCRReplaySearch::SkipFound,
             compress: false,
+            rich_diff: false,
             modify_request: None,
             modify_response: None,
         }
