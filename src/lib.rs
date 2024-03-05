@@ -51,6 +51,7 @@ pub struct VCRMiddleware {
     search: VCRReplaySearch,
     skip: Mutex<usize>,
     compress: bool,
+    rich_diff: bool,
     modify_request: Option<Box<RequestModifier>>,
     modify_response: Option<Box<ResponseModifier>>,
 }
@@ -116,6 +117,12 @@ impl VCRMiddleware {
     /// Adjust path in the middleware and return it
     pub fn with_path(mut self, path: impl Into<PathBuf>) -> Self {
         self.path = Some(path.into());
+        self
+    }
+
+    /// Adjust rich diff in the middleware and return it
+    pub fn with_rich_diff(mut self, rich_diff: bool) -> Self {
+        self.rich_diff = rich_diff;
         self
     }
 
@@ -238,6 +245,13 @@ impl VCRMiddleware {
         vcr_response
     }
 
+    fn header_values_to_string(&self, header_values: Option<&Vec<String>>) -> String {
+        match header_values {
+            Some(values) => values.join(", "),
+            None => "<MISSING>".to_string(),
+        }
+    }
+
     fn find_response_in_vcr(&self, req: vcr_cassette::Request) -> Option<vcr_cassette::Response> {
         let cassette = self.storage.lock().unwrap();
         let iteractions: Vec<&HttpInteraction> = match self.search {
@@ -249,9 +263,77 @@ impl VCRMiddleware {
             VCRReplaySearch::SearchAll => cassette.http_interactions.iter().collect(),
         };
 
+        // we only want to log match failures if no match is found, so capture
+        // everything at the beginning and then output it all at once if none
+        // are found
+        let mut diff_log = if self.rich_diff {
+            Some(String::new())
+        } else {
+            None
+        };
         for interaction in iteractions {
             if interaction.request == req {
                 return Some(interaction.response.clone());
+            } else if let Some(diff) = diff_log.as_mut() {
+                diff.push_str(&format!(
+                    "Did not match {method:?} to {uri}:\n",
+                    method = interaction.request.method,
+                    uri = interaction.request.uri.as_str()
+                ));
+                if interaction.request.method != req.method {
+                    diff.push_str(&format!(
+                        "  Method differs: recorded {expected:?}, got {got:?}\n",
+                        expected = interaction.request.method,
+                        got = req.method
+                    ));
+                }
+                if interaction.request.uri != req.uri {
+                    diff.push_str("  URI differs:\n");
+                    diff.push_str(&format!(
+                        "    recorded: \"{}\"\n",
+                        interaction.request.uri.as_str()
+                    ));
+                    diff.push_str(&format!("    got:      \"{}\"\n", req.uri.as_str()));
+                }
+                if interaction.request.headers != req.headers {
+                    diff.push_str("  Headers differ:\n");
+                    for (recorded_header_name, recorded_header_values) in
+                        &interaction.request.headers
+                    {
+                        let expected = self.header_values_to_string(Some(recorded_header_values));
+                        let got =
+                            self.header_values_to_string(req.headers.get(recorded_header_name));
+                        if expected != got {
+                            diff.push_str(&format!("    {}:\n", recorded_header_name));
+                            diff.push_str(&format!("      recorded: \"{}\"\n", expected));
+                            diff.push_str(&format!("      got:      \"{}\"\n", got));
+                        }
+                    }
+                    for (got_header_name, got_header_values) in &req.headers {
+                        if !interaction.request.headers.contains_key(got_header_name) {
+                            let got = self.header_values_to_string(Some(got_header_values));
+                            diff.push_str(&format!("    {}:\n", got_header_name));
+                            diff.push_str(&format!("      recorded: <MISSING>\n"));
+                            diff.push_str(&format!("      got:      \"{}\"\n", got));
+                        }
+                    }
+                }
+                if interaction.request.body != req.body {
+                    diff.push_str("  Body differs:\n");
+                    diff.push_str(&format!(
+                        "    recorded: \"{}\"\n",
+                        interaction.request.body.string
+                    ));
+                    diff.push_str(&format!("    got:      \"{}\"\n", req.body.string));
+                }
+                diff.push_str("\n");
+            }
+        }
+        if let Some(diff) = diff_log {
+            // tracing_test does not appear to capture multiline outputs for test
+            // assertion purposes, so we print each line out separately
+            for line in diff.split('\n') {
+                tracing::info!("{}", line);
             }
         }
         None
@@ -326,13 +408,21 @@ impl Middleware for VCRMiddleware {
                 self.record(vcr_request, vcr_response);
                 Ok(converted_response)
             }
-            VCRMode::Replay => {
-                let vcr_response = self.find_response_in_vcr(vcr_request).unwrap_or_else(|| {
-                    panic!("Can not read cassette contents from {:?}", self.path)
-                });
-                let response = self.vcr_to_response(vcr_response);
-                Ok(response)
-            }
+            VCRMode::Replay => match self.find_response_in_vcr(vcr_request) {
+                None => {
+                    let message = format!(
+                        "Cannot find corresponding request in cassette {:?}",
+                        self.path,
+                    );
+                    Err(reqwest_middleware::Error::Middleware(anyhow::anyhow!(
+                        message
+                    )))
+                }
+                Some(response) => {
+                    let response = self.vcr_to_response(response);
+                    Ok(response)
+                }
+            },
         }
     }
 }
@@ -347,6 +437,7 @@ impl From<vcr_cassette::Cassette> for VCRMiddleware {
             skip: Mutex::new(0),
             search: VCRReplaySearch::SkipFound,
             compress: false,
+            rich_diff: false,
             modify_request: None,
             modify_response: None,
         }
