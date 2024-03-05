@@ -274,7 +274,8 @@ impl VCRMiddleware {
         for interaction in iteractions {
             if interaction.request == req {
                 return Some(interaction.response.clone());
-            } else if let Some(diff) = diff_log.as_mut() {
+            }
+            if let Some(diff) = diff_log.as_mut() {
                 diff.push_str(&format!(
                     "Did not match {method:?} to {uri}:\n",
                     method = interaction.request.method,
@@ -313,7 +314,7 @@ impl VCRMiddleware {
                         if !interaction.request.headers.contains_key(got_header_name) {
                             let got = self.header_values_to_string(Some(got_header_values));
                             diff.push_str(&format!("    {}:\n", got_header_name));
-                            diff.push_str(&format!("      recorded: <MISSING>\n"));
+                            diff.push_str("      recorded: <MISSING>\n");
                             diff.push_str(&format!("      got:      \"{}\"\n", got));
                         }
                     }
@@ -326,7 +327,7 @@ impl VCRMiddleware {
                     ));
                     diff.push_str(&format!("    got:      \"{}\"\n", req.body.string));
                 }
-                diff.push_str("\n");
+                diff.push('\n');
             }
         }
         if let Some(diff) = diff_log {
