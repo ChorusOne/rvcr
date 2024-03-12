@@ -377,6 +377,7 @@ impl VCRMiddleware {
 
     fn record(&self, request: vcr_cassette::Request, response: vcr_cassette::Response) {
         let mut cassette = self.storage.lock().unwrap();
+        cassette.http_interactions.clear();
         cassette
             .http_interactions
             .push(vcr_cassette::HttpInteraction {
