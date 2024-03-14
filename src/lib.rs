@@ -88,6 +88,10 @@ pub type VCRError = &'static str;
 impl VCRMiddleware {
     /// Adjust mode in the middleware and return it
     pub fn with_mode(mut self, mode: VCRMode) -> Self {
+        if mode == VCRMode::Record {
+            let mut cassette = self.storage.lock().unwrap();
+            cassette.http_interactions.clear();
+        }
         self.mode = mode;
         self
     }
@@ -481,7 +485,7 @@ impl Drop for VCRMiddleware {
     }
 }
 
-/// Load VCR cassette for filesystem
+/// Load VCR cassette from filesystem
 //
 /// For simplicity, support JSON format only for now
 impl TryFrom<PathBuf> for VCRMiddleware {
